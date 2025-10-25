@@ -7,12 +7,12 @@ import { IDL } from "@dfinity/candid";
 import {
   PocketIc,
   createIdentity,
-} from "@hadronous/pic";
+} from "@dfinity/pic";
 
 import type {
   Actor,
   CanisterFixture
-} from "@hadronous/pic";
+} from "@dfinity/pic";
 
 
 
@@ -89,13 +89,7 @@ async function awardTokens(actor: Actor<NNSLedgerService>, caller: Identity,  fr
 describe("test timers", () => {
   beforeEach(async () => {
 
-    pic = await PocketIc.create(process.env.PIC_URL, {
-      nns: {
-          fromPath: NNS_STATE_PATH,
-          subnetId: Principal.fromText(NNS_SUBNET_ID),
-      },
-      system: 2,
-    });
+    pic = await PocketIc.create(process.env.PIC_URL);
 
     await pic.setTime(new Date(2024, 1, 30).getTime());
     await pic.tick();

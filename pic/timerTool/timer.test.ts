@@ -7,12 +7,12 @@ import { IDL } from "@dfinity/candid";
 import {
   PocketIc,
   createIdentity,
-} from "@hadronous/pic";
+} from "@dfinity/pic";
 
 import type {
   Actor,
   CanisterFixture
-} from "@hadronous/pic";
+} from "@dfinity/pic";
 
 
 
@@ -98,15 +98,7 @@ describe("test timers", () => {
   beforeEach(async () => {
     
 
-    pic = await PocketIc.create(process.env.PIC_URL, {
-      
-      nns: {
-          fromPath: NNS_STATE_PATH,
-          subnetId: Principal.fromText(NNS_SUBNET_ID),
-      },
-      system: 1,
-      application:1
-    });
+    pic = await PocketIc.create(process.env.PIC_URL);
 
     await pic.setTime(new Date(2024, 1, 30).getTime());
     //await pic.setTime(new Date(2024, 7, 10, 17, 55,33).getTime());
