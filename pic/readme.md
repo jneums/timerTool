@@ -31,11 +31,6 @@ PIC.js is great for setting up a controlled test environment with strict control
 - Set identity before making calls: `canister.actor.setIdentity(admin)`
 - Then call methods easily: `await canister.actor.methodName(args)`
 
-### Key Points:
-- If a canister needs to call another canister, you may need to run `pic.tick()` before everything settles
-- Each canister gets an actor object for easy interaction
-- Set identity before making calls: `canister.actor.setIdentity(admin)`
-- Then call methods easily: `await canister.actor.methodName(args)`
 
 ## Setup and Tear Down
 
