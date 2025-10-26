@@ -1,12 +1,14 @@
 import { Principal } from "@dfinity/principal";
 import type { Identity } from '@dfinity/agent';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
+import { resolve } from 'path';
 
 import { IDL } from "@dfinity/candid";
 
 import {
   PocketIc,
   createIdentity,
+  SubnetStateType,
 } from "@dfinity/pic";
 
 import type {
@@ -43,12 +45,20 @@ const nnsLedgerCanisterId = Principal.fromText(
     "ryjl3-tyaaa-aaaaa-aaaba-cai"
   );
 
+const NNS_STATE_PATH = resolve(__dirname, '..', 'nns_state');
+
 const admin = createIdentity("admin");
 const alice = createIdentity("alice");
 const OneMinute = BigInt(60000000000); // 1 minute in Nanoseconds
 
-const base64ToUInt8Array = (base64String: string): Uint8Array => {
-  return Uint8Array.from(Buffer.from(base64String, 'base64'));
+const base64ToArrayBuffer = (base64String: string): ArrayBuffer => {
+  const buffer = Buffer.from(base64String, 'base64');
+  const ab = new ArrayBuffer(buffer.length);
+  const view = new Uint8Array(ab);
+  for (let i = 0; i < buffer.length; ++i) {
+    view[i] = buffer[i];
+  }
+  return ab;
 };
 
 const minterPublicKey = 'Uu8wv55BKmk9ZErr6OIt5XR1kpEGXcOSOC1OYzrAwuk=';
@@ -56,8 +66,8 @@ const minterPrivateKey =
   'N3HB8Hh2PrWqhWH2Qqgr1vbU9T3gb1zgdBD8ZOdlQnVS7zC/nkEqaT1kSuvo4i3ldHWSkQZdw5I4LU5jOsDC6Q==';
 
 const minterIdentity = Ed25519KeyIdentity.fromKeyPair(
-  base64ToUInt8Array(minterPublicKey),
-  base64ToUInt8Array(minterPrivateKey),
+  new Uint8Array(base64ToArrayBuffer(minterPublicKey)),
+  new Uint8Array(base64ToArrayBuffer(minterPrivateKey)),
 );
 
 async function awardTokens(actor: Actor<NNSLedgerService>, caller: Identity,  fromSub: Uint8Array | null, to: Account, amount: bigint) : Promise<Icrc1TransferResult> {
@@ -78,20 +88,21 @@ async function awardTokens(actor: Actor<NNSLedgerService>, caller: Identity,  fr
 describe("test timers", () => {
   beforeEach(async () => {
 
-    pic = await PocketIc.create(process.env.PIC_URL);
+    pic = await PocketIc.create(process.env.PIC_URL, {
+      nns: {
+        state: {
+          type: SubnetStateType.FromPath,
+          path: NNS_STATE_PATH,
+        },
+      },
+    });
 
-    await pic.setTime(new Date(2024, 1, 30).getTime());
-    await pic.tick();
-    await pic.tick();
-    await pic.tick();
-    await pic.tick();
+    // NNS state has a timestamp, so advance time forward from there
     await pic.tick();
     await pic.advanceTime(1000 * 5);
 
-
     console.log("pic system", pic.getSystemSubnets());
 
-    await pic.resetTime();
     await pic.tick();
 
     timer_fixture = await pic.setupCanister<TimerService>({

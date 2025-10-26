@@ -7,7 +7,9 @@ import { IDL } from "@dfinity/candid";
 import {
   PocketIc,
   createIdentity,
+  SubnetStateType,
 } from "@dfinity/pic";
+import { resolve } from 'path';
 
 import type {
   Actor,
@@ -44,6 +46,7 @@ import {
   idlFactory as nnsIdlFactory,
 } from "../../src/declarations/nns-ledger/nns-ledger.did.js";
 
+const NNS_STATE_PATH = resolve(__dirname, '..', 'nns_state');
 
 let pic: PocketIc;
 
@@ -90,22 +93,22 @@ async function awardTokens(actor: Actor<NNSLedgerService>, caller: Identity,  fr
 describe("test timers", () => {
   beforeEach(async () => {
     
+    pic = await PocketIc.create(process.env.PIC_URL, {
+      nns: {
+        state: {
+          type: SubnetStateType.FromPath,
+          path: NNS_STATE_PATH,
+        }
+      }
+    });
 
-    pic = await PocketIc.create(process.env.PIC_URL);
-
-    await pic.setTime(new Date(2024, 1, 30).getTime());
-    //await pic.setTime(new Date(2024, 7, 10, 17, 55,33).getTime());
-    await pic.tick();
-    await pic.tick();
-    await pic.tick();
-    await pic.tick();
+    // NNS state has a timestamp, so advance time forward from there
     await pic.tick();
     await pic.advanceTime(1000 * 5);
 
     let systemSubnets = pic.getSystemSubnets();
     console.log("pic system", systemSubnets);
 
-    await pic.resetTime();
     await pic.tick();
 
     //targetSubnetId: subnets[0].id,
@@ -870,7 +873,12 @@ it('timer restarts properly after upgrade', async () => {
   await pic.upgradeCanister({ 
     canisterId: timer_fixture.canisterId, 
     wasm: sub_WASM_PATH,
-    arg: IDL.encode(timerInit({IDL}), [[]]).buffer });
+    arg: IDL.encode(timerInit({IDL}), [[]]).buffer,
+    upgradeModeOptions: {
+      skip_pre_upgrade: [],
+      wasm_memory_persistence: [{ keep: null }]
+    }
+  });
 
   // You would probably need to re-initialize or confirm state if needed here, not always necessary
   await pic.tick(); // Advance to trigger any instant side-effects post-upgrade
@@ -968,7 +976,12 @@ it('cycle share is processed correctly', async () => {
   await pic.upgradeCanister({ 
     canisterId: timer_fixture.canisterId, 
     wasm: sub_WASM_PATH,
-    arg: IDL.encode(timerInit({IDL}), [[]]).buffer });
+    arg: IDL.encode(timerInit({IDL}), [[]]).buffer,
+    upgradeModeOptions: {
+      skip_pre_upgrade: [],
+      wasm_memory_persistence: [{ keep: null }]
+    }
+  });
 
   let afterUpgrade =  currentTime + (OneDay * 31n) + (OneDay * 31n) + OneMinute + OneDay + OneMinute;
 
@@ -1037,7 +1050,12 @@ it('stress test', async () => {
   await pic.upgradeCanister({ 
     canisterId: timer_fixture.canisterId, 
     wasm: sub_WASM_PATH,
-    arg: IDL.encode(timerInit({IDL}), [[]]).buffer });
+    arg: IDL.encode(timerInit({IDL}), [[]]).buffer,
+    upgradeModeOptions: {
+      skip_pre_upgrade: [],
+      wasm_memory_persistence: [{ keep: null }]
+    }
+  });
 
   console.log("moving a month in the future");
 

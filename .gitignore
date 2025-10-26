@@ -1,4 +1,7 @@
 pic/nns_state
+pic/nns_state.tar.gz
+pic/nns_state.tar.xz
+pic/._nns_state
 node_modules
 .dfx
 .mops
