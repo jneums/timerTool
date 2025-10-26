@@ -35,7 +35,7 @@ describe("test timer utilities - reconstitution tracing", () => {
     timer_fixture = await pic.setupCanister<TimerService>({
       idlFactory: timersIDLFactory,
       wasm: sub_WASM_PATH,
-      arg: IDL.encode(timerInit({IDL}), [[]]),
+      arg: IDL.encode(timerInit({IDL}), [[]]).buffer,
     });
   });
 
@@ -88,7 +88,7 @@ describe("test timer utilities - cancellation", () => {
     timer_fixture = await pic.setupCanister<TimerService>({
       idlFactory: timersIDLFactory,
       wasm: sub_WASM_PATH,
-      arg: IDL.encode(timerInit({IDL}), [[]]),
+      arg: IDL.encode(timerInit({IDL}), [[]]).buffer,
     });
   });
 

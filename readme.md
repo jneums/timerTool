@@ -217,6 +217,8 @@ timerTool.registerExecutionListenerSync(?"com.myevent.recurring", handleEvent);
 
 The Timer Tool includes TypeScript tests to verify its behavior. Refer to the provided test file for examples of expected usage and test cases.
 
+Check test [readme](pic/readme.md) for more details.
+
 
 ## OVS Default Behavior
 

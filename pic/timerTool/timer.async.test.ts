@@ -20,11 +20,7 @@ import {idlFactory as timersIDLFactory,
   init as timerInit } from "../../src/declarations/timer/timer.did.js";
 import type {
   _SERVICE as TimerService,
-  Action,
-  ActionId,
-  ActionRequest,
-  Args,
-  Stats } from "../../src/declarations/timer/timer.did.d";
+  ActionRequest } from "../../src/declarations/timer/timer.did.d";
 export const sub_WASM_PATH = ".dfx/local/canisters/timer/timer.wasm";
 
 import type {
@@ -43,23 +39,16 @@ let pic: PocketIc;
 let timer_fixture: CanisterFixture<TimerService>;
 let nnsledger: Actor<NNSLedgerService>;
 
-const NNS_SUBNET_ID =
-  "erfz5-i2fgp-76zf7-idtca-yam6s-reegs-x5a3a-nku2r-uqnwl-5g7cy-tqe";
 const nnsLedgerCanisterId = Principal.fromText(
     "ryjl3-tyaaa-aaaaa-aaaba-cai"
   );
 
-const NNS_STATE_PATH = "pic/nns_state/node-100/state";
-
 const admin = createIdentity("admin");
 const alice = createIdentity("alice");
-const bob = createIdentity("bob");
-const serviceProvider = createIdentity("serviceProvider");
-const OneDay = BigInt(86400000000000); // 24 hours in NanoSeconds
 const OneMinute = BigInt(60000000000); // 1 minute in Nanoseconds
 
 const base64ToUInt8Array = (base64String: string): Uint8Array => {
-  return Buffer.from(base64String, 'base64');
+  return Uint8Array.from(Buffer.from(base64String, 'base64'));
 };
 
 const minterPublicKey = 'Uu8wv55BKmk9ZErr6OIt5XR1kpEGXcOSOC1OYzrAwuk=';
@@ -105,14 +94,12 @@ describe("test timers", () => {
     await pic.resetTime();
     await pic.tick();
 
-    const subnets = pic.getApplicationSubnets();
-
     timer_fixture = await pic.setupCanister<TimerService>({
       //targetCanisterId: Principal.fromText("q26le-iqaaa-aaaam-actsa-cai"),
       idlFactory: timersIDLFactory,
       wasm: sub_WASM_PATH,
       //targetSubnetId: subnets[0].id,
-      arg: IDL.encode(timerInit({IDL}), [[]]),
+      arg: IDL.encode(timerInit({IDL}), [[]]).buffer,
     });
     
     nnsledger = await pic.createActor<NNSLedgerService>(
@@ -181,7 +168,7 @@ it(`async sets an action correctly and schedules timer`, async () => {
   const timer_fixture = await pic.setupCanister<TimerService>({
     idlFactory: timersIDLFactory,
     wasm: sub_WASM_PATH,
-    arg: IDL.encode(timerInit({IDL}), [[]]),
+    arg: IDL.encode(timerInit({IDL}), [[]]).buffer,
   });
   console.log("in async sets an action correctly and schedules timer")
 
@@ -269,7 +256,7 @@ it(`async sets a specific action correctly and schedules timer`, async () => {
   const timer_fixture = await pic.setupCanister<TimerService>({
     idlFactory: timersIDLFactory,
     wasm: sub_WASM_PATH,
-    arg: IDL.encode(timerInit({IDL}), [[]]),
+    arg: IDL.encode(timerInit({IDL}), [[]]).buffer,
   });
 
   // Define a sample time and action
@@ -749,11 +736,6 @@ it(`async can remove an action before it runs`, async () => {
 });
 
 it('async timer restarts properly after upgrade', async () => {
-  const action: ActionRequest = {
-    actionType: "delayedAction", // Example action type
-    params: new Uint8Array(IDL.encode([IDL.Nat], [10])) // Arbitrary data
-  };
-
   let currentTime = BigInt(Math.floor((await pic.getTime())) * 1000000);
 
   // Assume maxExecutions is set to 2 and we add 3 actions
@@ -780,7 +762,12 @@ it('async timer restarts properly after upgrade', async () => {
   await pic.upgradeCanister({ 
     canisterId: timer_fixture.canisterId, 
     wasm: sub_WASM_PATH,
-    arg: IDL.encode(timerInit({IDL}), [[]]) });
+    arg: IDL.encode(timerInit({IDL}), [[]]).buffer,
+    upgradeModeOptions: {
+      skip_pre_upgrade: [],
+      wasm_memory_persistence: [{ keep: null }],
+    },
+  });
 
   // You would probably need to re-initialize or confirm state if needed here, not always necessary
   await pic.tick(); // Advance to trigger any instant side-effects post-upgrade
