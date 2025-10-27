@@ -46,13 +46,21 @@ describe("test timer utilities - reconstitution tracing", () => {
   it('should track reconstitution traces for fresh initialization', async () => {
     timer_fixture.actor.setIdentity(admin);
 
+    // First test if canister works at all
+    try {
+      const hello = await timer_fixture.actor.hello();
+      console.log("Hello returned:", hello);
+    } catch (e) {
+      console.log("Hello failed:", e);
+    }
+
     // Get reconstitution traces
     const traces = await timer_fixture.actor.get_reconstitution_traces();
     console.log("Reconstitution traces:", traces);
 
     expect(traces.length).toBeGreaterThan(0);
-    expect(traces[0].migratedFrom).toBe("v0_0_0");
-    expect(traces[0].migratedTo).toBe("v0_1_0");
+    expect(traces[0].migratedFrom).toBe("v0_1_0");
+    expect(traces[0].migratedTo).toBe("v0_2_0");
     expect(traces[0].validationPassed).toBe(true);
     expect(traces[0].actionsRestored).toBe(0n);
   });

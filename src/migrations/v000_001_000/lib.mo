@@ -6,9 +6,9 @@ import D "mo:base/Debug";
 
 module {
 
-  public func upgrade(prevmigration_state : MigrationTypes.State, args : MigrationTypes.Args, caller : Principal, canister : Principal) : MigrationTypes.State {
+  public func upgrade(prevmigration_state : MigrationTypes.State, args : MigrationTypes.Args, _caller : Principal, _canister : Principal) : MigrationTypes.State {
 
-    D.print("in upgrade " # debug_show (args));
+    D.print("=== IN UPGRADE TO v0_1_0 ===" # debug_show (args));
 
     let (
       timeTree : v0_1_0.TimeTree,
@@ -65,9 +65,9 @@ module {
       var lastActionIdReported = lastActionIdReported;
       var lastCycleReport = lastCycleReport;
       var nextCycleActionId = nextCycleActionId;
-      var reconstitutionTraces = [];
     };
 
+    D.print("=== SUCCESSFULLY CREATED v0_1_0 STATE ===");
     return #v0_1_0(#data(state));
   };
 

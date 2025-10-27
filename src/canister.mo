@@ -110,7 +110,7 @@ shared (deployer) persistent actor class TimerTool<system>(args : TT.Args) = thi
   });
 
   private func getState() : TT.CurrentState {
-    let #v0_1_0(#data(val)) = tt_migration_state else D.trap("state not init");
+    let #v0_2_0(#data(val)) = tt_migration_state else D.trap("state not init");
     val;
   };
 

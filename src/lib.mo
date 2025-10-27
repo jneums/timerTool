@@ -49,7 +49,7 @@ module {
   public type InitArgs = MigrationTypes.Args;
   public type InitArgList = MigrationTypes.ArgList;
   public func initialState() : State { #v0_0_0(#data) };
-  public let currentStateVersion = #v0_1_0(#id);
+  public let currentStateVersion = #v0_2_0(#id);
   public let Migration = MigrationLib;
 
   public let init = Migration.migrate;
@@ -109,6 +109,7 @@ module {
     };
 
     D.print("TimerTool created by " # Principal.toText(caller) # " for canister " # Principal.toText(canister) # " with args " # debug_show (args) # " and environment " # debug_show (switch (_environment) { case (null) "null"; case (?val) "set" }));
+    D.print("=== TIMERTOOL CONSTRUCTOR: stored = " # debug_show(stored));
 
     public let environment : Environment = switch (_environment) {
       case (?val) val;
@@ -117,34 +118,21 @@ module {
 
     /// Initializes the ledger state with either a new state or a given state for migration.
     /// This setup process involves internal data migration routines.
+    D.print("=== ABOUT TO INITIALIZE STATE ===");
     var state : CurrentState = switch (stored) {
       case (null) {
-        let #v0_1_0(#data(foundState)) = init(initialState(), currentStateVersion, args, caller, canister);
-
-        // Add trace for fresh initialization
-        foundState.reconstitutionTraces := [{
-          timestamp = Int.abs(Time.now());
-          migratedFrom = "new";
-          migratedTo = "v0_1_0";
-          actionsRestored = 0;
-          timersRestored = 0;
-          validationPassed = true;
-          errors = [];
-        }];
-
+        D.print("stored is null, calling init with initialState");
+        let #v0_2_0(#data(foundState)) = init(initialState(), currentStateVersion, args, caller, canister);
         foundState;
       };
       case (?val) {
-        let #v0_1_0(#data(foundState)) = init(val, currentStateVersion, args, caller, canister);
-
-        // Add trace for state migration
-        foundState.reconstitutionTraces := Array.append(foundState.reconstitutionTraces, [{ timestamp = Int.abs(Time.now()); migratedFrom = switch (val) { case (#v0_0_0(_)) "v0_0_0"; case (#v0_1_0(_)) "v0_1_0" }; migratedTo = "v0_1_0"; actionsRestored = BTree.size(foundState.timeTree); timersRestored = BTree.size(foundState.timeTree); validationPassed = true; errors = [] }]);
-
+        D.print("stored has value: " # debug_show(val));
+        let #v0_2_0(#data(foundState)) = init(val, currentStateVersion, args, caller, canister);
         foundState;
       };
     };
 
-    storageChanged(#v0_1_0(#data(state)));
+    storageChanged(#v0_2_0(#data(state)));
 
     private let executionListeners = Map.new<Text, ExecutionItem>();
 
