@@ -1,35 +1,57 @@
 type TimerTool = 
  service {
    __timer_tool_init_: () -> ();
-   add_action: (nat, ActionRequest) ->
+   add_action: (time: nat, action: ActionRequest) ->
     (record {
-       actionId: ActionId__1;
+       actionId: ActionId;
        currentCounter: nat;
        timerStats: Stats;
      });
-   add_action_async: (nat, ActionRequest) ->
+   add_action_async: (time: nat, action: ActionRequest) ->
     (record {
-       actionId: ActionId__1;
+       actionId: ActionId;
        currentCounter: nat;
        timerStats: Stats;
      });
-   cancel_action: (nat) ->
+   cancel_action: (id: nat) ->
     (record {
        currentCounter: nat;
        result: opt nat;
        timerStats: Stats;
      });
+   cancel_actions_by_filter: (filter: ActionFilter) -> (CancellationResult);
+   cancel_actions_by_ids: (actionIds: vec nat) -> (CancellationResult);
+   clear_reconstitution_traces: () -> ();
+   emergency_clear_all_timers: () -> (nat);
+   force_release_lock: () -> (opt nat);
+   force_system_timer_cancel: () -> (bool);
+   get_actions_by_filter: (filter: ActionFilter) -> (vec ActionDetail) query;
    get_counter: () -> (nat) query;
    get_lastActionIdReported: () -> (opt nat) query;
+   get_latest_reconstitution_trace: () -> (opt ReconstitutionTrace) query;
+   get_reconstitution_traces: () -> (vec ReconstitutionTrace) query;
    get_stats: () -> (Stats) query;
+   get_timer_diagnostics: () -> (TimerDiagnostics) query;
    hello: () -> (nat) query;
    hello_world: () -> (text);
-   incremote: (nat) -> ();
+   incremote: (amt: nat) -> ();
    trap: () -> ();
-   update_collector: (text) -> ();
-   update_max_executions: (nat) -> ();
+   update_collector: (req: text) -> ();
+   update_max_executions: (amt: nat) -> ();
+   validate_timer_state: () -> (vec text);
  };
 type TimerId = nat;
+type TimerDiagnostics = 
+ record {
+   currentTime: Time;
+   lastExecutionDelta: int;
+   lockStatus: opt Time;
+   nextExecutionDelta: opt int;
+   overdueActions: nat;
+   pendingActions: nat;
+   systemTimerStatus: opt TimerId;
+   totalActions: nat;
+ };
 type Time = nat;
 type Stats = 
  record {
@@ -42,35 +64,60 @@ type Stats =
    nextTimer: opt TimerId;
    timers: nat;
  };
-type Args = 
- opt
-  record {
-    expectedExecutionTime: Time;
-    initialTimers: vec record {
-                         ActionId;
-                         Action;
-                       };
-    lastActionIdReported: opt nat;
-    lastCycleReport: opt nat;
-    lastExecutionTime: Time;
-    maxExecutions: opt nat;
-    nextActionId: nat;
-    nextCycleActionId: opt nat;
-  };
+type ReconstitutionTrace = 
+ record {
+   actionsRestored: nat;
+   errors: vec text;
+   migratedFrom: text;
+   migratedTo: text;
+   timersRestored: nat;
+   timestamp: Time;
+   validationPassed: bool;
+ };
+type CancellationResult = 
+ record {
+   cancelled: vec ActionId;
+   errors: vec record {
+                 nat;
+                 text;
+               };
+   notFound: vec nat;
+ };
+type Args = opt ArgList;
+type ArgList = 
+ record {
+   expectedExecutionTime: Time;
+   initialTimers: vec record {
+                        ActionId;
+                        Action;
+                      };
+   lastActionIdReported: opt nat;
+   lastCycleReport: opt nat;
+   lastExecutionTime: Time;
+   maxExecutions: opt nat;
+   nextActionId: nat;
+   nextCycleActionId: opt nat;
+ };
 type ActionRequest = 
  record {
    actionType: text;
    params: blob;
  };
-type ActionId__1 = 
- record {
-   id: nat;
-   time: Time;
- };
 type ActionId = 
  record {
    id: nat;
    time: Time;
+ };
+type ActionFilter = 
+ variant {
+   All;
+   ByActionId: nat;
+   ByRetryCount: nat;
+   ByTimeRange: record {
+                  Time;
+                  Time;
+                };
+   ByType: text;
  };
 type ActionDetail = 
  record {
@@ -84,4 +131,4 @@ type Action =
    params: blob;
    retries: nat;
  };
-service : (Args) -> TimerTool
+service : (args: Args) -> TimerTool

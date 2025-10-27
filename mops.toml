@@ -1,10 +1,10 @@
 [dependencies]
-base = "0.12.0"
+base = "0.16.0"
 stableheapbtreemap = "1.5.0"
 star = "0.1.1"
 map = "9.0.1"
-ovs-fixed = "0.1.2"
-class-plus = "0.0.1"
+ovs-fixed = "0.1.4"
+class-plus = "0.0.2"
 
 [dev-dependencies]
 test = "2.0.0"

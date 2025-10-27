@@ -6,49 +6,49 @@ import D "mo:base/Debug";
 
 module {
 
-  public func upgrade(prevmigration_state: MigrationTypes.State, args: MigrationTypes.Args, caller: Principal, canister : Principal): MigrationTypes.State {
+  public func upgrade(prevmigration_state : MigrationTypes.State, args : MigrationTypes.Args, caller : Principal, canister : Principal) : MigrationTypes.State {
 
-    D.print("in upgrade " # debug_show(args));
+    D.print("in upgrade " # debug_show (args));
 
-    
     let (
       timeTree : v0_1_0.TimeTree,
       actionIdIndex,
       lastExecutionTime : v0_1_0.Time,
       expectedExecutionTime : v0_1_0.Time,
       nextActionId : Nat,
-      lastActionIdReported: ?Nat,
-      nextCycleActionId: ?Nat,
-      lastCycleReport: ?Nat,
-      maxExecutions: Nat
-    ) = switch(args){
-      case(null){
+      lastActionIdReported : ?Nat,
+      nextCycleActionId : ?Nat,
+      lastCycleReport : ?Nat,
+      maxExecutions : Nat,
+    ) = switch (args) {
+      case (null) {
         (
-          v0_1_0.BTree.init<v0_1_0.ActionId, v0_1_0.Action>(?32), 
+          v0_1_0.BTree.init<v0_1_0.ActionId, v0_1_0.Action>(?32),
           v0_1_0.Map.new<Nat, v0_1_0.Time>(),
-          0, 
           0,
           0,
+          0,
           null,
           null,
           null,
-          10);
+          10,
+        );
       };
-      case(?val){
+      case (?val) {
         (
           v0_1_0.BTree.fromArray<v0_1_0.ActionId, v0_1_0.Action>(32, v0_1_0.ActionIdCompare, val.initialTimers),
-          v0_1_0.Map.fromIter<Nat, v0_1_0.Time>(Array.map<(v0_1_0.ActionId, v0_1_0.Action), (Nat, Nat)>(val.initialTimers, func(x: (v0_1_0.ActionId, v0_1_0.Action)) : (Nat, Nat){(x.0.id, x.0.time)}).vals(), v0_1_0.Map.nhash),
+          v0_1_0.Map.fromIter<Nat, v0_1_0.Time>(Array.map<(v0_1_0.ActionId, v0_1_0.Action), (Nat, Nat)>(val.initialTimers, func(x : (v0_1_0.ActionId, v0_1_0.Action)) : (Nat, Nat) { (x.0.id, x.0.time) }).vals(), v0_1_0.Map.nhash),
           val.lastExecutionTime,
           val.expectedExecutionTime,
           val.nextActionId,
           val.lastActionIdReported,
           val.nextCycleActionId,
           val.lastCycleReport,
-          switch(val.maxExecutions){
-            case(?maxExecutions) maxExecutions;
-            case(null) 10;
-          }
-        )
+          switch (val.maxExecutions) {
+            case (?maxExecutions) maxExecutions;
+            case (null) 10;
+          },
+        );
       };
     };
 
@@ -65,6 +65,7 @@ module {
       var lastActionIdReported = lastActionIdReported;
       var lastCycleReport = lastCycleReport;
       var nextCycleActionId = nextCycleActionId;
+      var reconstitutionTraces = [];
     };
 
     return #v0_1_0(#data(state));

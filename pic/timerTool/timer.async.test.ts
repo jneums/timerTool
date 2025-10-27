@@ -1,18 +1,13 @@
-import { Principal } from "@dfinity/principal";
-import type { Identity } from '@dfinity/agent';
-import { Ed25519KeyIdentity } from '@dfinity/identity';
-
 import { IDL } from "@dfinity/candid";
 
 import {
   PocketIc,
   createIdentity,
-} from "@hadronous/pic";
+} from "@dfinity/pic";
 
 import type {
-  Actor,
   CanisterFixture
-} from "@hadronous/pic";
+} from "@dfinity/pic";
 
 
 
@@ -20,111 +15,39 @@ import {idlFactory as timersIDLFactory,
   init as timerInit } from "../../src/declarations/timer/timer.did.js";
 import type {
   _SERVICE as TimerService,
-  Action,
-  ActionId,
-  ActionRequest,
-  Args,
-  Stats } from "../../src/declarations/timer/timer.did.d";
+  ActionRequest } from "../../src/declarations/timer/timer.did.d";
 export const sub_WASM_PATH = ".dfx/local/canisters/timer/timer.wasm";
-
-import type {
-  _SERVICE as NNSLedgerService,
-  Account,
-  Icrc1TransferResult
-
-} from "../../src/declarations/nns-ledger/nns-ledger.did.d";
-import {
-  idlFactory as nnsIdlFactory,
-} from "../../src/declarations/nns-ledger/nns-ledger.did.js";
 
 
 let pic: PocketIc;
 
 let timer_fixture: CanisterFixture<TimerService>;
-let nnsledger: Actor<NNSLedgerService>;
-
-const NNS_SUBNET_ID =
-  "erfz5-i2fgp-76zf7-idtca-yam6s-reegs-x5a3a-nku2r-uqnwl-5g7cy-tqe";
-const nnsLedgerCanisterId = Principal.fromText(
-    "ryjl3-tyaaa-aaaaa-aaaba-cai"
-  );
-
-const NNS_STATE_PATH = "pic/nns_state/node-100/state";
 
 const admin = createIdentity("admin");
-const alice = createIdentity("alice");
-const bob = createIdentity("bob");
-const serviceProvider = createIdentity("serviceProvider");
-const OneDay = BigInt(86400000000000); // 24 hours in NanoSeconds
 const OneMinute = BigInt(60000000000); // 1 minute in Nanoseconds
-
-const base64ToUInt8Array = (base64String: string): Uint8Array => {
-  return Buffer.from(base64String, 'base64');
-};
-
-const minterPublicKey = 'Uu8wv55BKmk9ZErr6OIt5XR1kpEGXcOSOC1OYzrAwuk=';
-const minterPrivateKey =
-  'N3HB8Hh2PrWqhWH2Qqgr1vbU9T3gb1zgdBD8ZOdlQnVS7zC/nkEqaT1kSuvo4i3ldHWSkQZdw5I4LU5jOsDC6Q==';
-
-const minterIdentity = Ed25519KeyIdentity.fromKeyPair(
-  base64ToUInt8Array(minterPublicKey),
-  base64ToUInt8Array(minterPrivateKey),
-);
-
-async function awardTokens(actor: Actor<NNSLedgerService>, caller: Identity,  fromSub: Uint8Array | null, to: Account, amount: bigint) : Promise<Icrc1TransferResult> {
-  actor.setIdentity(caller);
-  let result = await actor.icrc1_transfer({
-    memo: [],
-    amount: amount,
-    fee: [],
-    from_subaccount: fromSub ? [fromSub] : [],
-    to: to,
-    created_at_time: [],
-  });
-  console.log("transfer result", result);
-  return result;
-};
 
 
 describe("test timers", () => {
   beforeEach(async () => {
 
-    pic = await PocketIc.create(process.env.PIC_URL, {
-      nns: {
-          fromPath: NNS_STATE_PATH,
-          subnetId: Principal.fromText(NNS_SUBNET_ID),
-      },
-      system: 2,
-    });
+    pic = await PocketIc.create(process.env.PIC_URL);
 
     await pic.setTime(new Date(2024, 1, 30).getTime());
     await pic.tick();
-    await pic.tick();
-    await pic.tick();
-    await pic.tick();
-    await pic.tick();
     await pic.advanceTime(1000 * 5);
-
 
     console.log("pic system", pic.getSystemSubnets());
 
     await pic.resetTime();
     await pic.tick();
 
-    const subnets = pic.getApplicationSubnets();
-
     timer_fixture = await pic.setupCanister<TimerService>({
-      //targetCanisterId: Principal.fromText("q26le-iqaaa-aaaam-actsa-cai"),
+      //targetCanisterId: Principal.fromText("q26le-iqaaa-aaaam-actsa-cai");
       idlFactory: timersIDLFactory,
       wasm: sub_WASM_PATH,
       //targetSubnetId: subnets[0].id,
-      arg: IDL.encode(timerInit({IDL}), [[]]),
+      arg: IDL.encode(timerInit({IDL}), [[]]).buffer,
     });
-    
-    nnsledger = await pic.createActor<NNSLedgerService>(
-      nnsIdlFactory,
-      nnsLedgerCanisterId
-    );
 
   });
 
@@ -145,49 +68,13 @@ describe("test timers", () => {
     expect(hello).toBe(BigInt(60000000000));
   });
 
-  it(`async can create an approval`, async () => {
-
-    await awardTokens(nnsledger, minterIdentity, null, {owner : alice.getPrincipal(), subaccount : []}, BigInt(10000000000));
-
-    await pic.tick();
-
-
-    // Set the identity to Alice to act on her behalf
-    timer_fixture.actor.setIdentity(alice);
-    nnsledger.setIdentity(alice);
-
-  
-    // Approve a transfer
-    const approvalResult = await nnsledger.icrc2_approve({
-        from_subaccount: [],
-        spender: {
-            owner: timer_fixture.canisterId,
-            subaccount: []
-        },
-        amount: BigInt(10000000000000000),
-        memo: [],
-        created_at_time: [BigInt((await pic.getTime()) * 1000000)],
-        expected_allowance: [],
-        expires_at: [],
-        fee: [BigInt(10000)]
-    });
-
-    console.log("approval result", approvalResult);
-
-    expect(approvalResult).toMatchObject({ Ok: expect.any(BigInt) });
-    // Forward time 
-    await pic.advanceTime(86400000); // 24 hours in milliseconds
-    await pic.tick();
-
-  });
-
 
 
 it(`async sets an action correctly and schedules timer`, async () => {
   const timer_fixture = await pic.setupCanister<TimerService>({
     idlFactory: timersIDLFactory,
     wasm: sub_WASM_PATH,
-    arg: IDL.encode(timerInit({IDL}), [[]]),
+    arg: IDL.encode(timerInit({IDL}), [[]]).buffer,
   });
   console.log("in async sets an action correctly and schedules timer")
 
@@ -275,7 +162,7 @@ it(`async sets a specific action correctly and schedules timer`, async () => {
   const timer_fixture = await pic.setupCanister<TimerService>({
     idlFactory: timersIDLFactory,
     wasm: sub_WASM_PATH,
-    arg: IDL.encode(timerInit({IDL}), [[]]),
+    arg: IDL.encode(timerInit({IDL}), [[]]).buffer,
   });
 
   // Define a sample time and action
@@ -755,11 +642,6 @@ it(`async can remove an action before it runs`, async () => {
 });
 
 it('async timer restarts properly after upgrade', async () => {
-  const action: ActionRequest = {
-    actionType: "delayedAction", // Example action type
-    params: new Uint8Array(IDL.encode([IDL.Nat], [10])) // Arbitrary data
-  };
-
   let currentTime = BigInt(Math.floor((await pic.getTime())) * 1000000);
 
   // Assume maxExecutions is set to 2 and we add 3 actions
@@ -786,7 +668,12 @@ it('async timer restarts properly after upgrade', async () => {
   await pic.upgradeCanister({ 
     canisterId: timer_fixture.canisterId, 
     wasm: sub_WASM_PATH,
-    arg: IDL.encode(timerInit({IDL}), [[]]) });
+    arg: IDL.encode(timerInit({IDL}), [[]]).buffer,
+    upgradeModeOptions: {
+      skip_pre_upgrade: [],
+      wasm_memory_persistence: [{ keep: null }],
+    },
+  });
 
   // You would probably need to re-initialize or confirm state if needed here, not always necessary
   await pic.tick(); // Advance to trigger any instant side-effects post-upgrade

@@ -1,1 +1,3 @@
-pic/nns_state
+node_modules
+.dfx
+.mops
