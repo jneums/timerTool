@@ -48,7 +48,7 @@ module {
       ignore v0_2_0.BTree.insert(newTimeTree, v0_2_0.ActionIdCompare, newActionId, newAction);
       actionCount += 1;
     };
-    D.print("Rebuilt " # debug_show(actionCount) # " actions in time tree");
+    D.print("Rebuilt " # debug_show (actionCount) # " actions in time tree");
 
     // Rebuild the action ID index
     let newActionIdIndex = v0_2_0.Map.new<Nat, v0_2_0.Time>();

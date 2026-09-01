@@ -109,7 +109,7 @@ module {
     };
 
     D.print("TimerTool created by " # Principal.toText(caller) # " for canister " # Principal.toText(canister) # " with args " # debug_show (args) # " and environment " # debug_show (switch (_environment) { case (null) "null"; case (?val) "set" }));
-    D.print("=== TIMERTOOL CONSTRUCTOR: stored = " # debug_show(stored));
+    D.print("=== TIMERTOOL CONSTRUCTOR: stored = " # debug_show (stored));
 
     public let environment : Environment = switch (_environment) {
       case (?val) val;
@@ -126,7 +126,7 @@ module {
         foundState;
       };
       case (?val) {
-        D.print("stored has value: " # debug_show(val));
+        D.print("stored has value: " # debug_show (val));
         let #v0_2_0(#data(foundState)) = init(val, currentStateVersion, args, caller, canister);
         foundState;
       };
